@@ -5,9 +5,11 @@
 int main() {
 
     int n = 702;
-
     image images[n];
-    csvToImages(images, "datasets/mnist_train.csv", n);
+    std::string filename;
+
+    std::cin >> filename;
+    csvToImages(images, filename, n);
 
     images[701].printImage();
 

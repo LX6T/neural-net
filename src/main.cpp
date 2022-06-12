@@ -1,5 +1,5 @@
 #include <iostream>
-#include "matrix.cpp"
+#include "matrix.h"
 
 int main() {
     std::cout << "Hello, World!" << std::endl;

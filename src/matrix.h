@@ -2,109 +2,112 @@
 // Created by alex on 12/06/2022.
 //
 
+#include <iostream>
 #pragma once
 
-template <typename T>
 class matrix {
 public:
     // Declare constructors
     matrix();
-    matrix(int rows, int cols);
-    matrix(int rows, int cols, const T* inputData);
-    matrix(const matrix<T>& rhs);
+    matrix(int nRows, int nCols);
+    matrix(int nRows, int nCols, const double* inputData);
+    matrix(matrix& A);
 
     // Declare destructor
     ~matrix();
 
-    // Getters and Setters
-    T getElement(int row, int col);
-    bool setElement(int row, int col, T value);
-    int getRows();
-    int getCols();
+    // Getters/Setters
+    [[nodiscard]] int getRows() const;
+    [[nodiscard]] int getCols() const;
+    double getElement(int row, int col);
+    double getElement(int index);
+    bool setElement(int row, int col, double value);
+    bool setElement(int index, double value);
 
-    // Overload "==" operator
-    bool operator== (const matrix<T>& rhs);
+    // Print matrix
+    bool printMatrix();
 
-    // Overload "+", "-" and "*" operators
-    // Supports matrix-matrix, scalar-matrix, matrix-scalar
-    template <class U> friend matrix<U> operator+ (const matrix<U>& lhs, const matrix<U>& rhs);
-    template <class U> friend matrix<U> operator+ (const U& lhs, const matrix<U>& rhs);
-    template <class U> friend matrix<U> operator+ (const matrix<U>& lhs, const U& rhs);
+    // Comparison function
+    bool isEqualTo (matrix& A);
+    bool isEqualTo (double a);
 
-    template <class U> friend matrix<U> operator- (const matrix<U>& lhs, const matrix<U>& rhs);
-    template <class U> friend matrix<U> operator- (const U& lhs, const matrix<U>& rhs);
-    template <class U> friend matrix<U> operator- (const matrix<U>& lhs, const U& rhs);
+    // Matrix arithmetic
+    void add (matrix& A);
+    void add (double a);
 
-    template <class U> friend matrix<U> operator* (const matrix<U>& lhs, const matrix<U>& rhs);
-    template <class U> friend matrix<U> operator* (const U& lhs, const matrix<U>& rhs);
-    template <class U> friend matrix<U> operator* (const matrix<U>& lhs, const U& rhs);
+    void subtract (matrix& A);
+    void subtract (double a);
+
+    matrix dot (matrix& A);
+    void multiply (double a);
+
+    matrix power (int a);
 
 private:
-    T *matrixData;                      // Linear array storing matrix data
+    double* matrixData;                      // Linear array storing matrix data
     int rows, cols, elements;           // Total number of rows, columns and elements
-    int subToInd(int row, int col);     // Converts (rows, columns) to (index)
+    [[nodiscard]] int subToInd(int row, int col) const;     // Converts (rows, columns) to (index)
 };
 
 
 // CONSTRUCTOR (default)
-template<typename T>
-matrix<T>::matrix() {
+matrix::matrix() {
     rows = 1;
     cols = 1;
     elements = rows * cols;
-    matrixData = new T[elements];
+    matrixData = new double[elements];
     for (int i=0; i<elements; ++i) {
         matrixData[i] = 0;
     }
 }
 
 // CONSTRUCTOR (zeros)
-template<typename T>
-matrix<T>::matrix(int nRows, int nCols) {
+matrix::matrix(int nRows, int nCols) {
     rows = nRows;
     cols = nCols;
     elements = rows * cols;
-    matrixData = new T[elements];
+    matrixData = new double[elements];
     for (int i=0; i<elements; ++i) {
         matrixData[i] = 0;
     }
 }
 
 // CONSTRUCTOR (input)
-template<typename T>
-matrix<T>::matrix(int nRows, int nCols, const T* inputData) {
+matrix::matrix(int nRows, int nCols, const double* inputData) {
     rows = nRows;
     cols = nCols;
     elements = rows * cols;
-    matrixData = new T[elements];
+    matrixData = new double[elements];
     for (int i=0; i<elements; ++i) {
         matrixData[i] = inputData[i];
     }
 }
 
 // CONSTRUCTOR (copy)
-template<typename T>
-matrix<T>::matrix(const matrix<T>& rhs) {
-    rows = rhs.getRows();
-    cols = rhs.getCols();
+matrix::matrix(matrix& A) {
+    rows = A.getRows();
+    cols = A.getCols();
     elements = rows * cols;
-    matrixData = new T[elements];
+    matrixData = new double[elements];
     for (int i=0; i<elements; ++i) {
-        matrixData[i] = rhs.getElement(i);
+        matrixData[i] = A.getElement(i);
     }
 }
 
 // DESTRUCTOR
-template<typename T>
-matrix<T>::~matrix() {
+matrix::~matrix() {
     delete[] matrixData;
 }
 
 
-// GETTER (element)
-template<typename T>
-T matrix<T>::getElement(int row, int col) {
+// GETTER (element from row/column)
+double matrix::getElement(int row, int col) {
     int index = subToInd(row, col);
+    return getElement(index);
+}
+
+// GETTER (element from index)
+double matrix::getElement(int index) {
     if (index >= 0) {
         return matrixData[index];
     } else {
@@ -112,10 +115,14 @@ T matrix<T>::getElement(int row, int col) {
     }
 }
 
-// SETTER (element)
-template<typename T>
-bool matrix<T>::setElement(int row, int col, T value) {
+// SETTER (element from row/column)
+bool matrix::setElement(int row, int col, double value) {
     int index = subToInd(row, col);
+    return setElement(index, value);
+}
+
+// SETTER (element from index)
+bool matrix::setElement(int index, double value) {
     if (matrixData != nullptr) {
         matrixData[index] = value;
         return true;
@@ -125,30 +132,40 @@ bool matrix<T>::setElement(int row, int col, T value) {
 }
 
 // GETTER (#rows)
-template<typename T>
-int matrix<T>::getRows() {
+int matrix::getRows() const {
     return rows;
 }
 
 // GETTER (#columns)
-template<typename T>
-int matrix<T>::getCols() {
+int matrix::getCols() const {
     return cols;
 }
 
 
 // matrix == matrix
-template<typename T>
-bool matrix<T>::operator==(const matrix<T> &rhs) {
+bool matrix::isEqualTo(matrix &A) {
 
     // Checks if matrices have the same dimension
-    if (this->rows != rhs.rows || this->cols != rhs.cols)
+    if (rows != A.getRows() || cols != A.getCols())
         return false;
 
     // Checks if elements are the same
     bool isEqual = true;
     for (int i = 0; i < elements; ++i) {
-        if (this->elements[i] != rhs.elements[i]) {
+        if (matrixData[i] != A.getElement(i)) {
+            isEqual = false;
+        }
+    }
+    return isEqual;
+}
+
+// matrix == scalar
+bool matrix::isEqualTo(double a) {
+
+    // Checks if elements are the same
+    bool isEqual = true;
+    for (int i = 0; i < elements; ++i) {
+        if (matrixData[i] != a) {
             isEqual = false;
         }
     }
@@ -157,171 +174,117 @@ bool matrix<T>::operator==(const matrix<T> &rhs) {
 
 
 // matrix + matrix
-template<class U>
-matrix<U> operator+(const matrix<U> &lhs, const matrix<U> &rhs) {
-    int rows = lhs.rows;
-    int cols = lhs.cols;
-    int elements = lhs.elements;
-    U* tempSum = new U[elements];
+void matrix::add(matrix &A) {
     for (int i = 0; i < elements; ++i) {
-        tempSum[i] = lhs.matrixData[i] + rhs.matrixData[i];
+        matrixData[i] += A.getElement(i);
     }
-    matrix<U> sum(rows, cols, tempSum);
-    delete[] tempSum;
-    return sum;
-}
-
-// scalar + matrix
-template<class U>
-matrix<U> operator+(const U &lhs, const matrix<U> &rhs) {
-    int rows = rhs.rows;
-    int cols = rhs.cols;
-    int elements = rhs.elements;
-    U* tempSum = new U[elements];
-    for (int i = 0; i < elements; ++i) {
-        tempSum[i] = lhs + rhs.matrixData[i];
-    }
-    matrix<U> sum(rows, cols, tempSum);
-    delete[] tempSum;
-    return sum;
 }
 
 // matrix + scalar
-template<class U>
-matrix<U> operator+(const matrix<U> &lhs, const U &rhs) {
-    int rows = lhs.rows;
-    int cols = lhs.cols;
-    int elements = lhs.elements;
-    U* tempSum = new U[elements];
+void matrix::add(double a) {
     for (int i = 0; i < elements; ++i) {
-        tempSum[i] = lhs.matrixData[i] + rhs;
+        matrixData[i] += a;
     }
-    matrix<U> sum(rows, cols, tempSum);
-    delete[] tempSum;
-    return sum;
 }
 
 
-// matrix - matrix
-template<class U>
-matrix<U> operator-(const matrix<U> &lhs, const matrix<U> &rhs) {
-    int rows = lhs.rows;
-    int cols = lhs.cols;
-    int elements = lhs.elements;
-    U* tempDiff = new U[elements];
+// matrix + matrix
+void matrix::subtract(matrix &A) {
     for (int i = 0; i < elements; ++i) {
-        tempDiff[i] = lhs.matrixData[i] - rhs.matrixData[i];
+        matrixData[i] -= A.getElement(i);
     }
-    matrix<U> diff(rows, cols, tempDiff);
-    delete[] tempDiff;
-    return diff;
 }
 
-// scalar - matrix
-template<class U>
-matrix<U> operator-(const U &lhs, const matrix<U> &rhs) {
-    int rows = rhs.rows;
-    int cols = rhs.cols;
-    int elements = rhs.elements;
-    U* tempDiff = new U[elements];
+// matrix + scalar
+void matrix::subtract(double a) {
     for (int i = 0; i < elements; ++i) {
-        tempDiff[i] = lhs - rhs.matrixData[i];
+        matrixData[i] -= a;
     }
-    matrix<U> diff(rows, cols, tempDiff);
-    delete[] tempDiff;
-    return diff;
-}
-
-// matrix - scalar
-template<class U>
-matrix<U> operator-(const matrix<U> &lhs, const U &rhs) {
-    int rows = lhs.rows;
-    int cols = lhs.cols;
-    int elements = lhs.elements;
-    U* tempDiff = new U[elements];
-    for (int i = 0; i < elements; ++i) {
-        tempDiff[i] = lhs.matrixData[i] - rhs;
-    }
-    matrix<U> diff(rows, cols, tempDiff);
-    delete[] tempDiff;
-    return diff;
 }
 
 
 // matrix * matrix
-template<class U>
-matrix<U> operator*(const matrix<U> &lhs, const matrix<U> &rhs) {
-    int leftRows = lhs.rows;
-    int leftCols = lhs.cols;
-    int rightRows = rhs.rows;
-    int rightCols = rhs.cols;
+matrix matrix::dot(matrix &A) {
+    int leftRows = rows;
+    int leftCols = cols;
+    int rightRows = A.rows;
+    int rightCols = A.cols;
 
-    if (leftCols != rightRows) {
-        matrix<U> dotProduct(1, 1);
-        return dotProduct;
-    }
+    if (leftCols == rightRows) {
 
-    int prodRows = leftRows;
-    int prodCols = rightCols;
-    int prodElements = leftRows * rightCols;
+        int prodRows = leftRows;
+        int prodCols = rightCols;
+        int prodElements = leftRows * rightCols;
 
-    U* tempProd = new U[prodElements];
-    for (int i = 0; i < leftRows; ++i) {
-        for (int j = 0; j < rightCols; ++j) {
-            int prodIndex = rhs.subToInd(prodRows, prodCols);
-            U sumOfProducts = 0.0;
-            for (int k = 0; k < leftCols; ++k) {
-                int leftIndex = lhs.subToInd(i, k);
-                int rightIndex = rhs.subToInd(k, j);
-                sumOfProducts += lhs.matrixData[leftIndex] * rhs.matrixData[rightIndex];
+        double tempProd[prodElements];
+        for (int i = 0; i < leftRows; ++i) {
+            for (int j = 0; j < rightCols; ++j) {
+                int prodIndex = i * rightCols + j;
+                double sumOfProducts = 0.0;
+                for (int k = 0; k < leftCols; ++k) {
+                    int leftIndex = i * leftCols + k;
+                    int rightIndex = k * rightCols + j;
+                    sumOfProducts += matrixData[leftIndex] * A.getElement(rightIndex);
+                }
+                tempProd[prodIndex] = sumOfProducts;
             }
-            tempProd[prodIndex] = sumOfProducts;
         }
+
+        matrix dotProduct(prodRows, prodCols, tempProd);
+        return dotProduct;
+    } else {
+        std::cout << "dot product failed" << std::endl;
     }
 
-    matrix<U> dotProduct(prodRows, prodCols, tempProd);
-    delete[] tempProd;
-    return dotProduct;
-}
-
-// scalar * matrix
-template<class U>
-matrix<U> operator*(const U &lhs, const matrix<U> &rhs) {
-    int rows = rhs.rows;
-    int cols = rhs.cols;
-    int elements = rhs.elements;
-    U* tempProd = new U[elements];
-    for (int i = 0; i < elements; ++i) {
-        tempProd[i] = lhs - rhs.matrixData[i];
-    }
-    matrix<U> prod(rows, cols, tempProd);
-    delete[] tempProd;
-    return prod;
 }
 
 // matrix * scalar
-template<class U>
-matrix<U> operator*(const matrix<U> &lhs, const U &rhs) {
-    int rows = lhs.rows;
-    int cols = lhs.cols;
-    int elements = lhs.elements;
-    U* tempProd = new U[elements];
+void matrix::multiply(double a) {
     for (int i = 0; i < elements; ++i) {
-        tempProd[i] = lhs.matrixData[i] - rhs;
+        matrixData[i] *= a;
     }
-    matrix<U> prod(rows, cols, tempProd);
-    delete[] tempProd;
-    return prod;
+}
+
+
+// matrix ^ integer
+matrix matrix::power(int a) {
+
+    matrix A(rows, cols, matrixData);
+    matrix B(rows, cols, matrixData);
+
+    for (int i = 1; i < a; ++i) {
+        B = B.dot(A);
+    }
+
+    return B;
 }
 
 
 // Converts rows and columns to linear index
-template<typename T>
-int matrix<T>::subToInd(int row, int col) {
+int matrix::subToInd(int row, int col) const {
     if (row < rows && col < cols && row >= 0 && col >= 0) {
         return row * cols + col;
     } else {
+        std::cout << "conversion fail" << std::endl;
         return -1;
+    }
+}
+
+// Prints the matrix
+bool matrix::printMatrix() {
+    if (matrixData != nullptr) {
+        for (int i = 0; i < rows; ++i) {
+            for (int j = 0; j < cols; ++j) {
+                int index = subToInd(i, j);
+                std::cout << getElement(index) << ' ';
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "print success" << std::endl;
+        return true;
+    } else {
+        std::cout << "print fail" << std::endl;
+        return false;
     }
 }
 

@@ -9,7 +9,7 @@ class matrix {
 public:
     // Declare constructors
     matrix();
-    matrix(int nRows, int nCols);
+    matrix(int nRows, int nCols, double a);
     matrix(int nRows, int nCols, const double* inputData);
     matrix(matrix& A);
 
@@ -21,11 +21,14 @@ public:
     [[nodiscard]] int getCols() const;
     double getElement(int row, int col);
     double getElement(int index);
-    bool setElement(int row, int col, double value);
-    bool setElement(int index, double value);
+    void setElement(int row, int col, double value);
+    void setElement(int index, double value);
+
+    // Transpose matrix
+    matrix transpose();
 
     // Print matrix
-    bool printMatrix();
+    void printMatrix();
 
     // Comparison function
     bool isEqualTo (matrix& A);
@@ -61,14 +64,14 @@ matrix::matrix() {
     }
 }
 
-// CONSTRUCTOR (zeros)
-matrix::matrix(int nRows, int nCols) {
+// CONSTRUCTOR (fill)
+matrix::matrix(int nRows, int nCols, double a) {
     rows = nRows;
     cols = nCols;
     elements = rows * cols;
     matrixData = new double[elements];
     for (int i=0; i<elements; ++i) {
-        matrixData[i] = 0;
+        matrixData[i] = a;
     }
 }
 
@@ -111,23 +114,23 @@ double matrix::getElement(int index) {
     if (index >= 0) {
         return matrixData[index];
     } else {
+//        std::cout << "get failed" << std::endl;
         return 0.0;
     }
 }
 
 // SETTER (element from row/column)
-bool matrix::setElement(int row, int col, double value) {
+void matrix::setElement(int row, int col, double value) {
     int index = subToInd(row, col);
-    return setElement(index, value);
+    setElement(index, value);
 }
 
 // SETTER (element from index)
-bool matrix::setElement(int index, double value) {
+void matrix::setElement(int index, double value) {
     if (matrixData != nullptr) {
         matrixData[index] = value;
-        return true;
     } else {
-        return false;
+//        std::cout << "set failed" << std::endl;
     }
 }
 
@@ -233,7 +236,7 @@ matrix matrix::dot(matrix &A) {
         matrix dotProduct(prodRows, prodCols, tempProd);
         return dotProduct;
     } else {
-        std::cout << "dot product failed" << std::endl;
+//        std::cout << "dot product failed" << std::endl;
     }
 
 }
@@ -265,26 +268,41 @@ int matrix::subToInd(int row, int col) const {
     if (row < rows && col < cols && row >= 0 && col >= 0) {
         return row * cols + col;
     } else {
-        std::cout << "conversion fail" << std::endl;
+//        std::cout << "conversion fail" << std::endl;
         return -1;
     }
 }
 
 // Prints the matrix
-bool matrix::printMatrix() {
+void matrix::printMatrix() {
     if (matrixData != nullptr) {
         for (int i = 0; i < rows; ++i) {
             for (int j = 0; j < cols; ++j) {
-                int index = subToInd(i, j);
-                std::cout << getElement(index) << ' ';
+                std::cout << getElement(i, j) << ' ';
             }
             std::cout << std::endl;
         }
-        std::cout << "print success" << std::endl;
-        return true;
+//        std::cout << "print success" << std::endl;
     } else {
-        std::cout << "print fail" << std::endl;
-        return false;
+//        std::cout << "print fail" << std::endl;
     }
+}
+
+matrix matrix::transpose() {
+
+    matrix T(cols, rows, matrixData);
+
+    if (matrixData != nullptr) {
+        for (int i = 0; i < rows; ++i) {
+            for (int j = 0; j < cols; ++j) {
+                T.setElement(j, i, getElement(i, j));
+            }
+        }
+//        std::cout << "transpose success" << std::endl;
+    } else {
+//        std::cout << "transpose fail" << std::endl;
+    }
+
+    return T;
 }
 

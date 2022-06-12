@@ -11,7 +11,7 @@ int main() {
     matrix B(2, 2, valuesB);
     B.printMatrix();
 
-    matrix C(B.power(4));
+    matrix C(A.transpose());
     C.printMatrix();
 
     return 0;

@@ -3,13 +3,14 @@
 //
 
 #include <iostream>
+#include <fstream>
 #pragma once
 
 class matrix {
 public:
     // Declare constructors
     matrix();
-    matrix(int nRows, int nCols, double a);
+    matrix(int nRows, int nCols, double value);
     matrix(int nRows, int nCols, const double* inputData);
     matrix(matrix& A);
 
@@ -29,6 +30,12 @@ public:
 
     // Print matrix
     void printMatrix();
+
+    // Save to file
+    void save(const std::string& filename);
+
+    // Load from file
+    void load (const std::string& filename);
 
     // Comparison function
     bool isEqualTo (matrix& A);
@@ -65,13 +72,13 @@ matrix::matrix() {
 }
 
 // CONSTRUCTOR (fill)
-matrix::matrix(int nRows, int nCols, double a) {
+matrix::matrix(int nRows, int nCols, double value) {
     rows = nRows;
     cols = nCols;
     elements = rows * cols;
     matrixData = new double[elements];
     for (int i=0; i<elements; ++i) {
-        matrixData[i] = a;
+        matrixData[i] = value;
     }
 }
 
@@ -304,5 +311,50 @@ matrix matrix::transpose() {
     }
 
     return T;
+}
+
+void matrix::save(const std::string& filename) {
+    std::ofstream mFile;
+    mFile.open(filename);
+
+    if (matrixData != nullptr) {
+        mFile << rows << ' ' << cols << std::endl;
+        for (int i = 0; i < rows; ++i) {
+            for (int j = 0; j < cols; ++j) {
+                mFile << getElement(i, j) << ' ';
+            }
+            mFile << std::endl;
+        }
+        std::cout << "save success" << std::endl;
+    } else {
+        std::cout << "save fail" << std::endl;
+    }
+
+    mFile.close();
+
+}
+
+void matrix::load(const std::string& filename) {
+    std::ifstream mFile;
+    mFile.open(filename);
+
+    if(mFile.peek() != std::ifstream::traits_type::eof()) {
+        mFile >> rows;
+        mFile >> cols;
+        elements = rows * cols;
+        for (int i = 0; i < rows; ++i) {
+            for (int j = 0; j < cols; ++j) {
+                double value;
+                mFile >> value;
+                setElement(i, j, value);
+            }
+        }
+        std::cout << "load success" << std::endl;
+    } else {
+        std::cout << "load fail" << std::endl;
+    }
+
+    mFile.close();
+
 }
 

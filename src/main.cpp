@@ -11,14 +11,14 @@ int main() {
     matrix B(2, 2, valuesB);
     B.printMatrix();
 
-    matrix C(A.transpose());
+    A.transpose();
+    A.printMatrix();
+
+    A.save("A.txt");
+
+    matrix C;
+    C.load("A.txt");
     C.printMatrix();
-
-    C.save("C.txt");
-
-    matrix D;
-    D.load("C.txt");
-    D.printMatrix();
 
     return 0;
 }

@@ -10,7 +10,7 @@ class matrix {
 public:
     // Declare constructors
     matrix();
-    matrix(int nRows, int nCols, double value);
+    matrix(int nRows, int nCols);
     matrix(int nRows, int nCols, const double* inputData);
     matrix(matrix& A);
 
@@ -25,8 +25,14 @@ public:
     void setElement(int row, int col, double value);
     void setElement(int index, double value);
 
+    // Fill matrix with a value
+    void fill (double value);
+
+    // Copy from another matrix
+    void copy (matrix& A);
+
     // Transpose matrix
-    matrix transpose();
+    void transpose();
 
     // Print matrix
     void printMatrix();
@@ -44,14 +50,11 @@ public:
     // Matrix arithmetic
     void add (matrix& A);
     void add (double a);
-
     void subtract (matrix& A);
     void subtract (double a);
-
-    matrix dot (matrix& A);
+    void dot (matrix& A);
     void multiply (double a);
-
-    matrix power (int a);
+    void power (int a);
 
 private:
     double* matrixData;                      // Linear array storing matrix data
@@ -72,14 +75,11 @@ matrix::matrix() {
 }
 
 // CONSTRUCTOR (fill)
-matrix::matrix(int nRows, int nCols, double value) {
+matrix::matrix(int nRows, int nCols) {
     rows = nRows;
     cols = nCols;
     elements = rows * cols;
     matrixData = new double[elements];
-    for (int i=0; i<elements; ++i) {
-        matrixData[i] = value;
-    }
 }
 
 // CONSTRUCTOR (input)
@@ -214,7 +214,7 @@ void matrix::subtract(double a) {
 
 
 // matrix * matrix
-matrix matrix::dot(matrix &A) {
+void matrix::dot(matrix &A) {
     int leftRows = rows;
     int leftCols = cols;
     int rightRows = A.rows;
@@ -241,7 +241,7 @@ matrix matrix::dot(matrix &A) {
         }
 
         matrix dotProduct(prodRows, prodCols, tempProd);
-        return dotProduct;
+        copy(dotProduct);
     } else {
 //        std::cout << "dot product failed" << std::endl;
     }
@@ -257,16 +257,16 @@ void matrix::multiply(double a) {
 
 
 // matrix ^ integer
-matrix matrix::power(int a) {
+void matrix::power(int a) {
 
     matrix A(rows, cols, matrixData);
     matrix B(rows, cols, matrixData);
 
     for (int i = 1; i < a; ++i) {
-        B = B.dot(A);
+        B.dot(A);
     }
 
-    return B;
+    copy(B);
 }
 
 
@@ -290,12 +290,13 @@ void matrix::printMatrix() {
             std::cout << std::endl;
         }
 //        std::cout << "print success" << std::endl;
+        std::cout << std::endl;
     } else {
 //        std::cout << "print fail" << std::endl;
     }
 }
 
-matrix matrix::transpose() {
+void matrix::transpose() {
 
     matrix T(cols, rows, matrixData);
 
@@ -305,12 +306,11 @@ matrix matrix::transpose() {
                 T.setElement(j, i, getElement(i, j));
             }
         }
+        copy(T);
 //        std::cout << "transpose success" << std::endl;
     } else {
 //        std::cout << "transpose fail" << std::endl;
     }
-
-    return T;
 }
 
 void matrix::save(const std::string& filename) {
@@ -325,9 +325,9 @@ void matrix::save(const std::string& filename) {
             }
             mFile << std::endl;
         }
-        std::cout << "save success" << std::endl;
+//        std::cout << "save success" << std::endl;
     } else {
-        std::cout << "save fail" << std::endl;
+//        std::cout << "save fail" << std::endl;
     }
 
     mFile.close();
@@ -349,12 +349,33 @@ void matrix::load(const std::string& filename) {
                 setElement(i, j, value);
             }
         }
-        std::cout << "load success" << std::endl;
+//        std::cout << "load success << std::endl";
     } else {
-        std::cout << "load fail" << std::endl;
+//        std::cout << "load fail" << std::endl;
     }
 
     mFile.close();
 
 }
 
+void matrix::copy(matrix &A) {
+    rows = A.getRows();
+    cols = A.getCols();
+    elements = rows * cols;
+    matrixData = new double[elements];
+    for (int i=0; i<elements; ++i) {
+        matrixData[i] = A.getElement(i);
+    }
+}
+
+void matrix::fill (double value) {
+    if (matrixData != nullptr) {
+        for (int i=0; i<elements; ++i) {
+            matrixData[i] = value;
+        }
+//        std::cout << "fill success" << std::endl;
+    } else {
+//        std::cout << "fill fail" << std::endl;
+    }
+
+}

@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <iomanip>
+
 #pragma once
 
 class matrix {
@@ -56,7 +58,7 @@ public:
     void multiply (double a);
     void power (int a);
 
-private:
+protected:
     double* matrixData;                      // Linear array storing matrix data
     int rows, cols, elements;           // Total number of rows, columns and elements
     [[nodiscard]] int subToInd(int row, int col) const;     // Converts (rows, columns) to (index)
@@ -282,15 +284,15 @@ int matrix::subToInd(int row, int col) const {
 
 // Prints the matrix
 void matrix::printMatrix() {
+    std::cout << std::endl;
     if (matrixData != nullptr) {
         for (int i = 0; i < rows; ++i) {
             for (int j = 0; j < cols; ++j) {
-                std::cout << getElement(i, j) << ' ';
+                std::cout << std::fixed << std::setprecision(3) << getElement(i, j) << ' ';
             }
             std::cout << std::endl;
         }
 //        std::cout << "print success" << std::endl;
-        std::cout << std::endl;
     } else {
 //        std::cout << "print fail" << std::endl;
     }

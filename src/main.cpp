@@ -1,24 +1,15 @@
 #include <iostream>
 #include "matrix.h"
-
+#include "image.h"
 
 int main() {
-    double valuesA[4] = {1, 2, 3, 4};
-    matrix A(2, 2, valuesA);
-    A.printMatrix();
 
-    double valuesB[4] = {1, 1, 1, 1};
-    matrix B(2, 2, valuesB);
-    B.printMatrix();
+    int n = 702;
 
-    A.transpose();
-    A.printMatrix();
+    image images[n];
+    csvToImages(images, "datasets/mnist_train.csv", n);
 
-    A.save("A.txt");
-
-    matrix C;
-    C.load("A.txt");
-    C.printMatrix();
+    images[701].printImage();
 
     return 0;
 }

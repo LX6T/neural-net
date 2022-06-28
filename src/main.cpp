@@ -1,15 +1,15 @@
 #include <iostream>
-#include "matrix.h"
-#include "image.h"
+#include "Image.h"
 
 int main() {
 
     int n = 702;
-    image images[n];
-    std::string filename;
+    Image images[n];
+    std::string trainSetFilename = "datasets/mnist_train.csv";
+    std::string testSetFilename = "datasets/mnist_test.csv";
 
-    std::cin >> filename;
-    csvToImages(images, filename, n);
+
+    csvToImages(images, trainSetFilename, n);
 
     images[701].printImage();
 

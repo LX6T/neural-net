@@ -5,19 +5,21 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <cmath>
+#include <random>
 
 #pragma once
 
-class matrix {
+class Matrix {
 public:
     // Declare constructors
-    matrix();
-    matrix(int nRows, int nCols);
-    matrix(int nRows, int nCols, const double* inputData);
-    matrix(matrix& A);
+    Matrix();
+    Matrix(int nRows, int nCols);
+    Matrix(int nRows, int nCols, const double* inputData);
+    Matrix(Matrix& A);
 
     // Declare destructor
-    ~matrix();
+    ~Matrix();
 
     // Getters/Setters
     [[nodiscard]] int getRows() const;
@@ -27,16 +29,19 @@ public:
     void setElement(int row, int col, double value);
     void setElement(int index, double value);
 
-    // Fill matrix with a value
+    // Fill Matrix with a value
     void fill (double value);
 
-    // Copy from another matrix
-    void copy (matrix& A);
+    // Copy from another Matrix
+    void copy (Matrix& A);
 
-    // Transpose matrix
+    // Transpose Matrix
     void transpose();
 
-    // Print matrix
+    // Randomise Matrix
+    void randomise();
+
+    // Print Matrix
     void printMatrix();
 
     // Save to file
@@ -46,27 +51,27 @@ public:
     void load (const std::string& filename);
 
     // Comparison function
-    bool isEqualTo (matrix& A);
+    bool isEqualTo (Matrix& A);
     bool isEqualTo (double a);
 
     // Matrix arithmetic
-    void add (matrix& A);
+    void add (Matrix& A);
     void add (double a);
-    void subtract (matrix& A);
+    void subtract (Matrix& A);
     void subtract (double a);
-    void dot (matrix& A);
+    void dot (Matrix& A);
     void multiply (double a);
     void power (int a);
 
 protected:
-    double* matrixData;                      // Linear array storing matrix data
+    double* matrixData;                      // Linear array storing Matrix data
     int rows, cols, elements;           // Total number of rows, columns and elements
     [[nodiscard]] int subToInd(int row, int col) const;     // Converts (rows, columns) to (index)
 };
 
 
 // CONSTRUCTOR (default)
-matrix::matrix() {
+Matrix::Matrix() {
     rows = 1;
     cols = 1;
     elements = rows * cols;
@@ -77,7 +82,7 @@ matrix::matrix() {
 }
 
 // CONSTRUCTOR (fill)
-matrix::matrix(int nRows, int nCols) {
+Matrix::Matrix(int nRows, int nCols) {
     rows = nRows;
     cols = nCols;
     elements = rows * cols;
@@ -85,7 +90,7 @@ matrix::matrix(int nRows, int nCols) {
 }
 
 // CONSTRUCTOR (input)
-matrix::matrix(int nRows, int nCols, const double* inputData) {
+Matrix::Matrix(int nRows, int nCols, const double* inputData) {
     rows = nRows;
     cols = nCols;
     elements = rows * cols;
@@ -96,7 +101,7 @@ matrix::matrix(int nRows, int nCols, const double* inputData) {
 }
 
 // CONSTRUCTOR (copy)
-matrix::matrix(matrix& A) {
+Matrix::Matrix(Matrix& A) {
     rows = A.getRows();
     cols = A.getCols();
     elements = rows * cols;
@@ -107,19 +112,19 @@ matrix::matrix(matrix& A) {
 }
 
 // DESTRUCTOR
-matrix::~matrix() {
+Matrix::~Matrix() {
     delete[] matrixData;
 }
 
 
 // GETTER (element from row/column)
-double matrix::getElement(int row, int col) {
+double Matrix::getElement(int row, int col) {
     int index = subToInd(row, col);
     return getElement(index);
 }
 
 // GETTER (element from index)
-double matrix::getElement(int index) {
+double Matrix::getElement(int index) {
     if (index >= 0) {
         return matrixData[index];
     } else {
@@ -129,13 +134,13 @@ double matrix::getElement(int index) {
 }
 
 // SETTER (element from row/column)
-void matrix::setElement(int row, int col, double value) {
+void Matrix::setElement(int row, int col, double value) {
     int index = subToInd(row, col);
     setElement(index, value);
 }
 
 // SETTER (element from index)
-void matrix::setElement(int index, double value) {
+void Matrix::setElement(int index, double value) {
     if (matrixData != nullptr) {
         matrixData[index] = value;
     } else {
@@ -144,18 +149,18 @@ void matrix::setElement(int index, double value) {
 }
 
 // GETTER (#rows)
-int matrix::getRows() const {
+int Matrix::getRows() const {
     return rows;
 }
 
 // GETTER (#columns)
-int matrix::getCols() const {
+int Matrix::getCols() const {
     return cols;
 }
 
 
-// matrix == matrix
-bool matrix::isEqualTo(matrix &A) {
+// Matrix == Matrix
+bool Matrix::isEqualTo(Matrix &A) {
 
     // Checks if matrices have the same dimension
     if (rows != A.getRows() || cols != A.getCols())
@@ -171,8 +176,8 @@ bool matrix::isEqualTo(matrix &A) {
     return isEqual;
 }
 
-// matrix == scalar
-bool matrix::isEqualTo(double a) {
+// Matrix == scalar
+bool Matrix::isEqualTo(double a) {
 
     // Checks if elements are the same
     bool isEqual = true;
@@ -185,38 +190,38 @@ bool matrix::isEqualTo(double a) {
 }
 
 
-// matrix + matrix
-void matrix::add(matrix &A) {
+// Matrix + Matrix
+void Matrix::add(Matrix &A) {
     for (int i = 0; i < elements; ++i) {
         matrixData[i] += A.getElement(i);
     }
 }
 
-// matrix + scalar
-void matrix::add(double a) {
+// Matrix + scalar
+void Matrix::add(double a) {
     for (int i = 0; i < elements; ++i) {
         matrixData[i] += a;
     }
 }
 
 
-// matrix + matrix
-void matrix::subtract(matrix &A) {
+// Matrix + Matrix
+void Matrix::subtract(Matrix &A) {
     for (int i = 0; i < elements; ++i) {
         matrixData[i] -= A.getElement(i);
     }
 }
 
-// matrix + scalar
-void matrix::subtract(double a) {
+// Matrix + scalar
+void Matrix::subtract(double a) {
     for (int i = 0; i < elements; ++i) {
         matrixData[i] -= a;
     }
 }
 
 
-// matrix * matrix
-void matrix::dot(matrix &A) {
+// Matrix * Matrix
+void Matrix::dot(Matrix &A) {
     int leftRows = rows;
     int leftCols = cols;
     int rightRows = A.rows;
@@ -242,7 +247,7 @@ void matrix::dot(matrix &A) {
             }
         }
 
-        matrix dotProduct(prodRows, prodCols, tempProd);
+        Matrix dotProduct(prodRows, prodCols, tempProd);
         copy(dotProduct);
     } else {
 //        std::cout << "dot product failed" << std::endl;
@@ -250,19 +255,19 @@ void matrix::dot(matrix &A) {
 
 }
 
-// matrix * scalar
-void matrix::multiply(double a) {
+// Matrix * scalar
+void Matrix::multiply(double a) {
     for (int i = 0; i < elements; ++i) {
         matrixData[i] *= a;
     }
 }
 
 
-// matrix ^ integer
-void matrix::power(int a) {
+// Matrix ^ integer
+void Matrix::power(int a) {
 
-    matrix A(rows, cols, matrixData);
-    matrix B(rows, cols, matrixData);
+    Matrix A(rows, cols, matrixData);
+    Matrix B(rows, cols, matrixData);
 
     for (int i = 1; i < a; ++i) {
         B.dot(A);
@@ -273,7 +278,7 @@ void matrix::power(int a) {
 
 
 // Converts rows and columns to linear index
-int matrix::subToInd(int row, int col) const {
+int Matrix::subToInd(int row, int col) const {
     if (row < rows && col < cols && row >= 0 && col >= 0) {
         return row * cols + col;
     } else {
@@ -282,8 +287,8 @@ int matrix::subToInd(int row, int col) const {
     }
 }
 
-// Prints the matrix
-void matrix::printMatrix() {
+// Prints the Matrix
+void Matrix::printMatrix() {
     std::cout << std::endl;
     if (matrixData != nullptr) {
         for (int i = 0; i < rows; ++i) {
@@ -298,9 +303,9 @@ void matrix::printMatrix() {
     }
 }
 
-void matrix::transpose() {
+void Matrix::transpose() {
 
-    matrix T(cols, rows, matrixData);
+    Matrix T(cols, rows, matrixData);
 
     if (matrixData != nullptr) {
         for (int i = 0; i < rows; ++i) {
@@ -315,7 +320,7 @@ void matrix::transpose() {
     }
 }
 
-void matrix::save(const std::string& filename) {
+void Matrix::save(const std::string& filename) {
     std::ofstream mFile;
     mFile.open(filename);
 
@@ -336,7 +341,7 @@ void matrix::save(const std::string& filename) {
 
 }
 
-void matrix::load(const std::string& filename) {
+void Matrix::load(const std::string& filename) {
     std::ifstream mFile;
     mFile.open(filename);
 
@@ -360,7 +365,7 @@ void matrix::load(const std::string& filename) {
 
 }
 
-void matrix::copy(matrix &A) {
+void Matrix::copy(Matrix &A) {
     rows = A.getRows();
     cols = A.getCols();
     elements = rows * cols;
@@ -370,7 +375,7 @@ void matrix::copy(matrix &A) {
     }
 }
 
-void matrix::fill (double value) {
+void Matrix::fill(double value) {
     if (matrixData != nullptr) {
         for (int i=0; i<elements; ++i) {
             matrixData[i] = value;
@@ -380,4 +385,12 @@ void matrix::fill (double value) {
 //        std::cout << "fill fail" << std::endl;
     }
 
+}
+
+void Matrix::randomise() {
+    double min = -1.0 / sqrt(rows);
+    double max = 1.0 / sqrt(rows);
+    for (int i = 0; i < elements; ++i) {
+        matrixData[i] = ( rand() / ((double)RAND_MAX+1)) * (max-min) + min;
+    }
 }

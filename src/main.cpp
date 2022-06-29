@@ -3,15 +3,16 @@
 
 int main() {
 
-    int n = 702;
-    Image images[n];
+    auto* trainingImages = new Image[702];
     std::string trainSetFilename = "datasets/mnist_train.csv";
     std::string testSetFilename = "datasets/mnist_test.csv";
 
 
-    csvToImages(images, trainSetFilename, n);
+    csvToImages(trainingImages, trainSetFilename, 702);
 
-    images[701].printImage();
+    trainingImages[701].printImage();
+
+    delete[] trainingImages;
 
     return 0;
 }

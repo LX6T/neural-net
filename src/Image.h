@@ -17,46 +17,52 @@ public:
     [[nodiscard]] int getLabel() const;
     void setLabel(int newLabel);
 
-    void copy(Image& img);
+    void copy(Image* img);
     void printImage();
 
 private:
     int label;
 };
 
+// CONSTRUCTOR (default)
 Image::Image() : Matrix() {
     this->label = -1;
 }
 
+// CONSTRUCTOR (input + label)
 Image::Image(int label, int nRows, int nCols, const double* inputData) : Matrix(nRows, nCols, inputData) {
     this->label = label;
 }
 
+// GETTER (image label)
 int Image::getLabel() const {
     return label;
 }
 
+// SETTER (image label)
 void Image::setLabel(int newLabel) {
     label = newLabel;
 }
 
-void Image::copy(Image &img){
-    label = img.getLabel();
-    rows = img.getRows();
-    cols = img.getCols();
+// Copies data from another image
+void Image::copy(Image* img){
+    label = img->getLabel();
+    rows = img->getRows();
+    cols = img->getCols();
     elements = rows * cols;
     matrixData = new double[elements];
     for (int i=0; i<elements; ++i) {
-        matrixData[i] = img.getElement(i);
+        matrixData[i] = img->getElement(i);
     }
 }
 
+// Prints image and label
 void Image::printImage() {
     printMatrix();
     std::cout << "Label: " << label << std::endl;
 }
 
-
+// Converts data from a CSV file into an array of images
 void csvToImages(Image* images, const std::string &filename, int n) {
 
     std::ifstream filein(filename);
@@ -80,7 +86,7 @@ void csvToImages(Image* images, const std::string &filename, int n) {
                 ++j;
             }
             Image img(label, 28, 28, data);
-            images[i].copy(img);
+            images[i].copy(&img);
         }
     } else {
         std::cout << "file not found" << std::endl;

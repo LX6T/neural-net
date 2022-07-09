@@ -11,13 +11,13 @@ class NeuralNet {
 public:
     NeuralNet(int input, int hidden, int output);
 
-    void train(std::vector<Image> trainingImages, int n);
-    Matrix predictImage(const Image& img) const;
-    Matrix predict(const Matrix& inputData) const;
+    void train(std::vector<Image> images, int n);
+    int predict(Image img) const;
+    double predictImages(std::vector<Image> images, int n) const;
 
-    void saveNet(const std::string& directory) const;
-    void loadNet(const std::string& filename);
-    void printNet() const;
+    void save(const std::string& directory) const;
+    void load(const std::string& filename);
+    void print() const;
 
 private:
     int input;
@@ -28,7 +28,6 @@ private:
     static double randomise(double x);
     static double sigmoid(double x);
     static Matrix sigmoidPrime(const Matrix& A);
-    static Matrix softMax(const Matrix& A);
 };
 
 NeuralNet::NeuralNet(int input, int hidden, int output) {
@@ -39,11 +38,11 @@ NeuralNet::NeuralNet(int input, int hidden, int output) {
     outputWeights = Matrix(output, hidden).apply(randomise);
 }
 
-void NeuralNet::train(std::vector<Image> trainingImages, int n) {
+void NeuralNet::train(std::vector<Image> images, int n) {
     for (int i = 0; i < n; ++i) {
 
         // Process input data
-        Image currentImage = trainingImages[i];
+        Image currentImage = images[i];
         Matrix inputData = Matrix(784, 1);
         for (int j = 0; j < 784; ++j) { inputData.setValue(j, currentImage.getValue(j)); }
 
@@ -65,18 +64,18 @@ void NeuralNet::train(std::vector<Image> trainingImages, int n) {
         outputWeights = outputWeights.plus(outputErrors.times(sigmoidPrime(finalOutputs)).dot(hiddenOutputs.transpose()).times(0.1));
         hiddenWeights = hiddenWeights.plus(hiddenErrors.times(sigmoidPrime(hiddenOutputs)).dot(inputData.transpose()).times(0.1));
 
-        if (i == 700) {
+        if (i % 100 == 0) {
             std::cout << "Img No. " << i << std::endl;
-            currentImage.printImage();
-            inputData.printMatrix();
-            outputData.printMatrix();
-            std::cout << hiddenOutputs.getRows() << "x" << hiddenOutputs.getCols() << std::endl;
-            hiddenOutputs.printMatrix();
-            std::cout << finalOutputs.getRows() << "x" << finalOutputs.getCols() << std::endl;
-            finalOutputs.printMatrix();
-            outputErrors.printMatrix();
-            hiddenErrors.printMatrix();
-            std::cout << std::endl;
+//            currentImage.printImage();
+//            inputData.printMatrix();
+//            outputData.printMatrix();
+//            std::cout << hiddenOutputs.getRows() << "x" << hiddenOutputs.getCols() << std::endl;
+//            hiddenOutputs.printMatrix();
+//            std::cout << finalOutputs.getRows() << "x" << finalOutputs.getCols() << std::endl;
+//            finalOutputs.printMatrix();
+//            outputErrors.printMatrix();
+//            hiddenErrors.printMatrix();
+//            std::cout << std::endl;
         }
     }
 }
@@ -92,31 +91,59 @@ Matrix NeuralNet::sigmoidPrime(const Matrix &A) {
     return multiplied;
 }
 
-Matrix NeuralNet::softMax(const Matrix &A) {
-    return Matrix();
-}
-
-void NeuralNet::saveNet(const std::string& directory) const {
+void NeuralNet::save(const std::string& directory) const {
     hiddenWeights.save(directory + "/hiddenWeights");
     outputWeights.save(directory + "/outputWeights");
 }
 
-Matrix NeuralNet::predictImage(const Image& img) const {
-    return Matrix();
+int NeuralNet::predict(Image img) const {
+    // Process input data
+    Matrix inputData = Matrix(784, 1);
+    for (int j = 0; j < 784; ++j) { inputData.setValue(j, img.getValue(j)); }
+
+    // Feed input data forward
+    Matrix hiddenInputs = hiddenWeights.dot(inputData);         // (300x784)*(784x1) = 300 x 1
+    Matrix hiddenOutputs = hiddenInputs.apply(sigmoid);
+    Matrix finalInputs = outputWeights.dot(hiddenOutputs);      // (10x300)*(300x1) = 10 x 1
+    Matrix finalOutputs = finalInputs.apply(sigmoid);
+
+    // Identify network's prediction
+    int prediction = -1;
+    double predictionWeight = 0.0;
+    for (int j = 0; j < 10; ++j) {
+        if (finalOutputs.getValue(j) > predictionWeight) {
+            prediction = j;
+            predictionWeight = finalOutputs.getValue(j);
+        }
+    }
+    return prediction;
 }
 
-Matrix NeuralNet::predict(const Matrix& inputData) const {
-    return Matrix();
+double NeuralNet::predictImages(std::vector<Image> images, int n) const {
+    int correctGuesses = 0;
+    for (int i = 0; i < n; ++i) {
+        // Network predicted value
+        int prediction = predict(images[i]);
+
+        // Compare network's guess with correct answer
+        if (prediction == images[i].getLabel())
+            correctGuesses++;
+
+        if (i % 1000 == 0)
+            std::cout << "Img No. " << i << std::endl;
+    }
+    return 1.0 * correctGuesses / n;
 }
 
-void NeuralNet::loadNet(const std::string &filename) {
+void NeuralNet::load(const std::string &filename) {
 
 }
 
-void NeuralNet::printNet() const {
+void NeuralNet::print() const {
 
 }
 
 double NeuralNet::randomise(double x) {
     return ((double) rand() / RAND_MAX) * 2 - 1;
 }
+

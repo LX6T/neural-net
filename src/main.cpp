@@ -21,7 +21,16 @@ void trainTest() {
     std::vector<Image> trainingImages = csvToImages("../data/mnist_train.csv", numberOfImages);
     NeuralNet net = NeuralNet(784, 300, 10);
     net.train(trainingImages, numberOfImages);
-    net.saveNet("../networks");
+    net.save("../networks");
+}
+
+void predictTest() {
+    int numberOfImages = 10000;
+    std::vector<Image> testingImages = csvToImages("../data/mnist_test.csv", numberOfImages);
+    NeuralNet net = NeuralNet(784, 300, 10);
+    net.load("../networks");
+    double accuracy = net.predictImages(testingImages, numberOfImages);
+    std::cout << "Accuracy: " << accuracy << std::endl;
 }
 
 int main() {
@@ -29,6 +38,8 @@ int main() {
     //matrixTest();
 
     trainTest();
+
+    predictTest();
 
     return 0;
 }

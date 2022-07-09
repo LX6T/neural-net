@@ -15,6 +15,8 @@ public:
     Image(int label, int nRows, int nCols, const double* inputData);
 
     [[nodiscard]] int getLabel() const;
+    [[nodiscard]] Matrix getMatrix() const;
+    [[nodiscard]] double getValue(int index) const;
     void setLabel(int newLabel);
 
     void copy(Image& img);
@@ -39,6 +41,14 @@ int Image::getLabel() const {
     return label;
 }
 
+Matrix Image::getMatrix() const {
+    return imgMatrix;
+}
+
+double Image::getValue(int index) const {
+    return imgMatrix.getValue(index);
+}
+
 void Image::setLabel(int newLabel) {
     label = newLabel;
 }
@@ -50,7 +60,7 @@ void Image::copy(Image &img){
     int elements = rows * cols;
     double matrixData[elements];
     for (int i=0; i<elements; ++i) {
-        matrixData[i] = img.imgMatrix.getElement(i);
+        matrixData[i] = img.imgMatrix.getValue(i);
     }
     imgMatrix = Matrix(rows, cols, matrixData);
 }
@@ -61,7 +71,10 @@ void Image::printImage() {
 }
 
 
-void csvToImages(Image* images, const std::string& filename, int n) {
+std::vector<Image> csvToImages(const std::string& filename, int n) {
+
+    std::vector<Image> images = std::vector<Image>(n);
+
     std::ifstream filein(filename);
 
     std::string line;
@@ -82,6 +95,7 @@ void csvToImages(Image* images, const std::string& filename, int n) {
             ++j;
         }
         Image img(label, 28, 28, data);
-        images[i].copy(img);
+        images[i] = img;
     }
+    return images;
 }

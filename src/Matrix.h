@@ -14,6 +14,7 @@ public:
     // Declare constructors
     Matrix();
     Matrix(int nRows, int nCols);
+    // Matrix(int nRows, int nCols, std::string random);
     Matrix(int nRows, int nCols, double fillValue);
     Matrix(int nRows, int nCols, const double* inputData);
     Matrix(const Matrix& A);
@@ -21,10 +22,10 @@ public:
     // Getters/Setters
     [[nodiscard]] int getRows() const;
     [[nodiscard]] int getCols() const;
-    double getElement(int row, int col) const;
-    double getElement(int index) const;
-    void setElement(int row, int col, double value);
-    void setElement(int index, double value);
+    double getValue(int row, int col) const;
+    double getValue(int index) const;
+    void setValue(int row, int col, double value);
+    void setValue(int index, double value);
 
     // Fill Matrix with a value
     void fill (double value);
@@ -42,6 +43,7 @@ public:
     void load (const std::string& filename);
 
     // Comparison function
+    bool hasSameDimensionsAs (const Matrix& A) const;
     bool isEqualTo (const Matrix& A) const;
     bool isEqualTo (double a) const;
 
@@ -51,15 +53,17 @@ public:
     Matrix minus (const Matrix& A) const;
     Matrix minus (double a) const;
     Matrix dot (const Matrix& A) const;
+    Matrix times (const Matrix& A) const;
     Matrix times (double a) const;
     Matrix toThePowerOf (int a) const;
+    Matrix apply (double (&func)(double)) const;
 
     // Transpose
     Matrix transpose() const;
 
 private:
     std::vector<double> matrixData;                                     // Linear array storing Matrix data
-    int rows, cols, elements;                                           // Total number of rows, columns and elements
+    int rows, cols, size;                                           // Total number of rows, columns and size
     [[nodiscard]] int flatten(int row, int col) const;  // Converts (rows, columns) to (index)
 };
 
@@ -68,7 +72,7 @@ private:
 Matrix::Matrix() {
     rows = 1;
     cols = 1;
-    elements = rows * cols;
+    size = rows * cols;
     matrixData = std::vector<double>(1, 0);
     matrixData[0] = 0;
 }
@@ -77,25 +81,40 @@ Matrix::Matrix() {
 Matrix::Matrix(int nRows, int nCols) {
     rows = nRows;
     cols = nCols;
-    elements = rows * cols;
-    matrixData = std::vector<double>(elements, 0.0);
+    size = rows * cols;
+    matrixData = std::vector<double>(size, 0.0);
 }
 
+// CONSTRUCTOR (randomise)
+/*
+Matrix::Matrix(int nRows, int nCols, std::string random) {
+    if (random == "random") {
+        rows = nRows;
+        cols = nCols;
+        size = rows * cols;
+        matrixData = std::vector<double>(size);
+        // FINISH IF REQUIRED
+    } else {
+        Matrix(nRows, nCols);
+    }
+}
+ */
+
 // CONSTRUCTOR (fill)
-Matrix::Matrix(int nRows, int nCols, const double fillValue) {
+Matrix::Matrix(int nRows, int nCols, double fillValue) {
     rows = nRows;
     cols = nCols;
-    elements = rows * cols;
-    matrixData = std::vector<double>(elements, fillValue);
+    size = rows * cols;
+    matrixData = std::vector<double>(size, fillValue);
 }
 
 // CONSTRUCTOR (input)
 Matrix::Matrix(int nRows, int nCols, const double* inputData) {
     rows = nRows;
     cols = nCols;
-    elements = rows * cols;
-    matrixData = std::vector<double>(elements);
-    for (int i=0; i<elements; ++i) {
+    size = rows * cols;
+    matrixData = std::vector<double>(size);
+    for (int i=0; i < size; ++i) {
         matrixData[i] = inputData[i];
     }
 }
@@ -105,23 +124,23 @@ Matrix::Matrix(int nRows, int nCols, const double* inputData) {
 Matrix::Matrix(const Matrix& A) {
     rows = A.getRows();
     cols = A.getCols();
-    elements = rows * cols;
-    matrixData = std::vector<double>(elements);
-    for (int i=0; i<elements; ++i) {
-        matrixData[i] = A.getElement(i);
+    size = rows * cols;
+    matrixData = std::vector<double>(size);
+    for (int i=0; i < size; ++i) {
+        matrixData[i] = A.getValue(i);
     }
 }
 
 
 // GETTER (element from row/column)
-double Matrix::getElement(int row, int col) const {
+double Matrix::getValue(int row, int col) const {
     int index = flatten(row, col);
-    return getElement(index);
+    return getValue(index);
 }
 
 // GETTER (element from index)
-double Matrix::getElement(int index) const {
-    if (index >= 0 and index < elements) {
+double Matrix::getValue(int index) const {
+    if (index >= 0 and index < size) {
         return matrixData[index];
     } else {
         std::cout << "get failed, index out of range" << std::endl;
@@ -130,14 +149,14 @@ double Matrix::getElement(int index) const {
 }
 
 // SETTER (element from row/column)
-void Matrix::setElement(int row, int col, double value) {
+void Matrix::setValue(int row, int col, double value) {
     int index = flatten(row, col);
-    setElement(index, value);
+    setValue(index, value);
 }
 
 // SETTER (element from index)
-void Matrix::setElement(int index, double value) {
-    if (index >= 0 and index < elements) {
+void Matrix::setValue(int index, double value) {
+    if (index >= 0 and index < size) {
         matrixData[index] = value;
     } else {
         std::cout << "set failed, index out of range" << std::endl;
@@ -155,17 +174,27 @@ int Matrix::getCols() const {
 }
 
 
-// Matrix == Matrix
-bool Matrix::isEqualTo(const Matrix &A) const {
+// Matrix has same dimensions as Matrix
+bool Matrix::hasSameDimensionsAs(const Matrix &A) const {
 
     // Checks if matrices have the same dimension
     if (rows != A.getRows() || cols != A.getCols())
         return false;
 
-    // Checks if elements are the same
+    return true;
+}
+
+// Matrix == Matrix
+bool Matrix::isEqualTo(const Matrix &A) const {
+
+    // Checks if matrices have the same dimension
+    if (!hasSameDimensionsAs(A))
+        return false;
+
+    // Checks if values are the same
     bool isEqual = true;
-    for (int i = 0; i < elements; ++i) {
-        if (matrixData[i] != A.getElement(i)) {
+    for (int i = 0; i < size; ++i) {
+        if (matrixData[i] != A.getValue(i)) {
             isEqual = false;
         }
     }
@@ -175,9 +204,9 @@ bool Matrix::isEqualTo(const Matrix &A) const {
 // Matrix == scalar
 bool Matrix::isEqualTo(double a) const {
 
-    // Checks if elements are the same
+    // Checks if values are the same
     bool isEqual = true;
-    for (int i = 0; i < elements; ++i) {
+    for (int i = 0; i < size; ++i) {
         if (matrixData[i] != a) {
             isEqual = false;
         }
@@ -189,8 +218,12 @@ bool Matrix::isEqualTo(double a) const {
 // Matrix + Matrix
 Matrix Matrix::plus(const Matrix &A) const {
     Matrix result = Matrix(rows, cols);
-    for (int i = 0; i < elements; ++i) {
-        result.setElement(i, getElement(i) + A.getElement(i));
+    if (hasSameDimensionsAs(A)) {
+        for (int i = 0; i < size; ++i) {
+            result.setValue(i, getValue(i) + A.getValue(i));
+        }
+    } else {
+        std::cout << "plus failed, inconsistent dimensions" << std::endl;
     }
     return result;
 }
@@ -198,8 +231,8 @@ Matrix Matrix::plus(const Matrix &A) const {
 // Matrix + scalar
 Matrix Matrix::plus(double a) const {
     Matrix result = Matrix(rows, cols);
-    for (int i = 0; i < elements; ++i) {
-        result.setElement(i, getElement(i) + a);
+    for (int i = 0; i < size; ++i) {
+        result.setValue(i, getValue(i) + a);
     }
     return result;
 }
@@ -208,8 +241,12 @@ Matrix Matrix::plus(double a) const {
 // Matrix - Matrix
 Matrix Matrix::minus(const Matrix &A) const {
     Matrix result = Matrix(rows, cols);
-    for (int i = 0; i < elements; ++i) {
-        result.setElement(i, getElement(i) - A.getElement(i));
+    if (hasSameDimensionsAs(A)) {
+        for (int i = 0; i < size; ++i) {
+            result.setValue(i, getValue(i) - A.getValue(i));
+        }
+    } else {
+        std::cout << "minus failed, inconsistent dimensions" << std::endl;
     }
     return result;
 }
@@ -217,8 +254,8 @@ Matrix Matrix::minus(const Matrix &A) const {
 // Matrix - scalar
 Matrix Matrix::minus(double a) const {
     Matrix result = Matrix(rows, cols);
-    for (int i = 0; i < elements; ++i) {
-        result.setElement(i, getElement(i) - a);
+    for (int i = 0; i < size; ++i) {
+        result.setValue(i, getValue(i) - a);
     }
     return result;
 }
@@ -244,9 +281,9 @@ Matrix Matrix::dot(const Matrix &A) const {
                 for (int k = 0; k < lc; ++k) {
                     int leftIndex = i * lc + k;
                     int rightIndex = k * rc + j;
-                    sum += getElement(leftIndex) * A.getElement(rightIndex);
+                    sum += getValue(leftIndex) * A.getValue(rightIndex);
                 }
-                result.setElement(dpIndex, sum);
+                result.setValue(dpIndex, sum);
             }
         }
     } else {
@@ -255,11 +292,24 @@ Matrix Matrix::dot(const Matrix &A) const {
     return result;
 }
 
+// Matrix * Matrix (value-wise)
+Matrix Matrix::times(const Matrix &A) const {
+    Matrix result = Matrix(rows, cols);
+    if (hasSameDimensionsAs(A)) {
+        for (int i = 0; i < size; ++i) {
+            result.setValue(i, getValue(i) + A.getValue(i));
+        }
+    } else {
+        std::cout << "times failed, inconsistent dimensions" << std::endl;
+    }
+    return result;
+}
+
 // Matrix * scalar
 Matrix Matrix::times(double a) const {
     Matrix result = Matrix(rows, cols);
-    for (int i = 0; i < elements; ++i) {
-        result.setElement(i, getElement(i) * a);
+    for (int i = 0; i < size; ++i) {
+        result.setValue(i, getValue(i) * a);
     }
     return result;
 }
@@ -274,6 +324,15 @@ Matrix Matrix::toThePowerOf(int a) const {
         result = result.dot(*this);
     }
 
+    return result;
+}
+
+// Apply a function to all values of the matrix
+Matrix Matrix::apply(double (&func)(double)) const {
+    Matrix result = Matrix(rows, cols);
+    for (int i = 0; i < size; ++i) {
+        result.setValue(i, func(getValue(i)));
+    }
     return result;
 }
 
@@ -293,7 +352,7 @@ void Matrix::printMatrix() const {
     std::cout << std::endl;
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            std::cout << std::fixed << std::setprecision(3) << getElement(i, j) << ' ';
+            std::cout << std::fixed << std::setprecision(3) << getValue(i, j) << ' ';
         }
         std::cout << std::endl;
     }
@@ -305,7 +364,7 @@ Matrix Matrix::transpose() const {
 
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            transposedMatrix.setElement(j, i, getElement(i, j));
+            transposedMatrix.setValue(j, i, getValue(i, j));
         }
     }
 
@@ -319,7 +378,7 @@ void Matrix::save(const std::string& filename) const {
     mFile << rows << ' ' << cols << std::endl;
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            mFile << getElement(i, j) << ' ';
+            mFile << getValue(i, j) << ' ';
         }
         mFile << std::endl;
     }
@@ -334,12 +393,12 @@ void Matrix::load(const std::string& filename) {
     if(mFile.peek() != std::ifstream::traits_type::eof()) {
         mFile >> rows;
         mFile >> cols;
-        elements = rows * cols;
+        size = rows * cols;
         for (int i = 0; i < rows; ++i) {
             for (int j = 0; j < cols; ++j) {
                 double value;
                 mFile >> value;
-                setElement(i, j, value);
+                setValue(i, j, value);
             }
         }
         std::cout << "load success" << std::endl;
@@ -354,16 +413,17 @@ void Matrix::load(const std::string& filename) {
 void Matrix::copy(const Matrix &A) {
     rows = A.getRows();
     cols = A.getCols();
-    elements = rows * cols;
-    matrixData = std::vector<double>(elements);
-    for (int i=0; i<elements; ++i) {
-        matrixData[i] = A.getElement(i);
+    size = rows * cols;
+    matrixData = std::vector<double>(size);
+    for (int i=0; i < size; ++i) {
+        matrixData[i] = A.getValue(i);
     }
 }
 
 void Matrix::fill (double value) {
-    for (int i=0; i<elements; ++i) {
+    for (int i=0; i < size; ++i) {
         matrixData[i] = value;
     }
     std::cout << "fill success" << std::endl;
 }
+

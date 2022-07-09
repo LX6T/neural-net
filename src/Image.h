@@ -2,62 +2,66 @@
 // Created by alex on 13/06/2022.
 //
 
-#include "matrix.h"
+#include "Matrix.h"
 #include <iostream>
 #include <cstring>
 #include <string>
 #include <sstream>
 #pragma once
 
-class image: public matrix {
+class Image {
 public:
-    image();
-    image(int label, int nRows, int nCols, const double* inputData);
+    Image();
+    Image(int label, int nRows, int nCols, const double* inputData);
 
     [[nodiscard]] int getLabel() const;
     void setLabel(int newLabel);
 
-    void copy(image& img);
+    void copy(Image& img);
     void printImage();
 
 private:
+    Matrix imgMatrix;
     int label;
 };
 
-image::image() : matrix() {
+Image::Image() {
+    imgMatrix = Matrix();
     this->label = -1;
 }
 
-image::image(int label, int nRows, int nCols, const double* inputData) : matrix(nRows, nCols, inputData) {
+Image::Image(int label, int nRows, int nCols, const double* inputData) {
+    imgMatrix = Matrix(nRows, nCols, inputData);
     this->label = label;
 }
 
-int image::getLabel() const {
+int Image::getLabel() const {
     return label;
 }
 
-void image::setLabel(int newLabel) {
+void Image::setLabel(int newLabel) {
     label = newLabel;
 }
 
-void image::copy(image &img){
+void Image::copy(Image &img){
     label = img.getLabel();
-    rows = img.getRows();
-    cols = img.getCols();
-    elements = rows * cols;
-    matrixData = new double[elements];
+    int rows = img.imgMatrix.getRows();
+    int cols = img.imgMatrix.getCols();
+    int elements = rows * cols;
+    double matrixData[elements];
     for (int i=0; i<elements; ++i) {
-        matrixData[i] = img.getElement(i);
+        matrixData[i] = img.imgMatrix.getElement(i);
     }
+    imgMatrix = Matrix(rows, cols, matrixData);
 }
 
-void image::printImage() {
-    printMatrix();
+void Image::printImage() {
+    imgMatrix.printMatrix();
     std::cout << "Label: " << label << std::endl;
 }
 
 
-void csvToImages(image* images, const std::string &filename, int n) {
+void csvToImages(Image* images, const std::string& filename, int n) {
     std::ifstream filein(filename);
 
     std::string line;
@@ -77,7 +81,7 @@ void csvToImages(image* images, const std::string &filename, int n) {
             data[j] = std::stod(num) / 256.0;
             ++j;
         }
-        image img(label, 28, 28, data);
+        Image img(label, 28, 28, data);
         images[i].copy(img);
     }
 }

@@ -16,16 +16,14 @@ void matrixTest() {
     A.printMatrix();
 }
 
-void trainTest() {
-    int numberOfImages = 702;
-    std::vector<Image> trainingImages = csvToImages("../data/mnist_train.csv", numberOfImages);
+void trainTest(int numberOfImages, const std::string& filename) {
+    std::vector<Image> trainingImages = csvToImages(filename, numberOfImages);
     NeuralNet net = NeuralNet(784, 300, 10);
     net.train(trainingImages, numberOfImages);
     net.save("../networks");
 }
 
-void predictTest() {
-    int numberOfImages = 10000;
+void predictTest(int numberOfImages, const std::string& filename) {
     std::vector<Image> testingImages = csvToImages("../data/mnist_test.csv", numberOfImages);
     NeuralNet net = NeuralNet(784, 300, 10);
     net.load("../networks");
@@ -37,9 +35,9 @@ int main() {
 
     //matrixTest();
 
-    trainTest();
+    trainTest(10000, "../data/mnist_test.csv");
 
-    predictTest();
+    predictTest(1000, "../data/mnist_test.csv");
 
     return 0;
 }

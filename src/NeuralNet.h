@@ -64,14 +64,10 @@ void NeuralNet::train(std::vector<Image> images, int n) {
         outputWeights = outputWeights.plus(outputErrors.times(sigmoidPrime(finalOutputs)).dot(hiddenOutputs.transpose()).times(0.1));
         hiddenWeights = hiddenWeights.plus(hiddenErrors.times(sigmoidPrime(hiddenOutputs)).dot(inputData.transpose()).times(0.1));
 
-        if (i % 100 == 0) {
+        if (i % 1000 == 0) {
             std::cout << "Img No. " << i << std::endl;
-//            currentImage.printImage();
-//            inputData.printMatrix();
 //            outputData.printMatrix();
-//            std::cout << hiddenOutputs.getRows() << "x" << hiddenOutputs.getCols() << std::endl;
 //            hiddenOutputs.printMatrix();
-//            std::cout << finalOutputs.getRows() << "x" << finalOutputs.getCols() << std::endl;
 //            finalOutputs.printMatrix();
 //            outputErrors.printMatrix();
 //            hiddenErrors.printMatrix();
@@ -135,8 +131,9 @@ double NeuralNet::predictImages(std::vector<Image> images, int n) const {
     return 1.0 * correctGuesses / n;
 }
 
-void NeuralNet::load(const std::string &filename) {
-
+void NeuralNet::load(const std::string &directory) {
+    hiddenWeights.load(directory + "/hiddenWeights");
+    outputWeights.load(directory + "/outputWeights");
 }
 
 void NeuralNet::print() const {

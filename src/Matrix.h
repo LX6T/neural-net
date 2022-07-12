@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <utility>
 #include <vector>
 
 #pragma once
@@ -14,9 +15,10 @@ public:
     // Declare constructors
     Matrix();
     Matrix(int nRows, int nCols);
-    // Matrix(int nRows, int nCols, std::string random);
+    Matrix(int nRows, int nCols, const std::string& random);
     Matrix(int nRows, int nCols, double fillValue);
     Matrix(int nRows, int nCols, const double* inputData);
+    Matrix(int nRows, int nCols, std::vector<double> inputData);
     Matrix(const Matrix& A);
 
     // Getters/Setters
@@ -26,9 +28,6 @@ public:
     double getValue(int index) const;
     void setValue(int row, int col, double value);
     void setValue(int index, double value);
-
-    // Fill Matrix with a value
-    void fill (double value);
 
     // Copy from another Matrix
     void copy (const Matrix& A);
@@ -61,10 +60,13 @@ public:
     // Transpose
     Matrix transpose() const;
 
+    // Flatten
+    Matrix flatten() const;
+
 private:
-    std::vector<double> matrixData;                                     // Linear array storing Matrix data
-    int rows, cols, size;                                           // Total number of rows, columns and size
-    [[nodiscard]] int flatten(int row, int col) const;  // Converts (rows, columns) to (index)
+    std::vector<double> matrixData;                         // Linear array storing Matrix data
+    int rows, cols, size;                                   // Total number of rows, columns and size
+    [[nodiscard]] int rcToIndex(int row, int col) const;    // Converts (rows, columns) to (index)
 };
 
 
@@ -86,19 +88,19 @@ Matrix::Matrix(int nRows, int nCols) {
 }
 
 // CONSTRUCTOR (randomise)
-/*
-Matrix::Matrix(int nRows, int nCols, std::string random) {
+Matrix::Matrix(int nRows, int nCols, const std::string& random) {
     if (random == "random") {
         rows = nRows;
         cols = nCols;
         size = rows * cols;
         matrixData = std::vector<double>(size);
-        // FINISH IF REQUIRED
+        for (int i = 0; i < size; ++i) {
+            matrixData[i] = ((double) rand() / RAND_MAX) * 2 - 1;
+        }
     } else {
         Matrix(nRows, nCols);
     }
 }
- */
 
 // CONSTRUCTOR (fill)
 Matrix::Matrix(int nRows, int nCols, double fillValue) {
@@ -108,7 +110,7 @@ Matrix::Matrix(int nRows, int nCols, double fillValue) {
     matrixData = std::vector<double>(size, fillValue);
 }
 
-// CONSTRUCTOR (input)
+// CONSTRUCTOR (input from array)
 Matrix::Matrix(int nRows, int nCols, const double* inputData) {
     rows = nRows;
     cols = nCols;
@@ -117,6 +119,14 @@ Matrix::Matrix(int nRows, int nCols, const double* inputData) {
     for (int i=0; i < size; ++i) {
         matrixData[i] = inputData[i];
     }
+}
+
+// CONSTRUCTOR (input from vector)
+Matrix::Matrix(int nRows, int nCols, std::vector<double> inputData) {
+    rows = nRows;
+    cols = nCols;
+    size = rows * cols;
+    matrixData = std::move(inputData);
 }
 
 // CONSTRUCTOR (copy)
@@ -134,7 +144,7 @@ Matrix::Matrix(const Matrix& A) {
 
 // GETTER (element from row/column)
 double Matrix::getValue(int row, int col) const {
-    int index = flatten(row, col);
+    int index = rcToIndex(row, col);
     return getValue(index);
 }
 
@@ -150,7 +160,7 @@ double Matrix::getValue(int index) const {
 
 // SETTER (element from row/column)
 void Matrix::setValue(int row, int col, double value) {
-    int index = flatten(row, col);
+    int index = rcToIndex(row, col);
     setValue(index, value);
 }
 
@@ -223,7 +233,9 @@ Matrix Matrix::plus(const Matrix &A) const {
             result.setValue(i, getValue(i) + A.getValue(i));
         }
     } else {
-        std::cout << "plus failed, inconsistent dimensions" << std::endl;
+        std::cout << "plus failed, inconsistent dimensions: "
+                  << rows << "x" << cols << " "
+                  << A.getRows() << "x" << A.getCols() << std::endl;
     }
     return result;
 }
@@ -246,7 +258,9 @@ Matrix Matrix::minus(const Matrix &A) const {
             result.setValue(i, getValue(i) - A.getValue(i));
         }
     } else {
-        std::cout << "minus failed, inconsistent dimensions" << std::endl;
+        std::cout << "minus failed, inconsistent dimensions: "
+                  << rows << "x" << cols << " "
+                  << A.getRows() << "x" << A.getCols() << std::endl;
     }
     return result;
 }
@@ -287,7 +301,9 @@ Matrix Matrix::dot(const Matrix &A) const {
             }
         }
     } else {
-        std::cout << "dot product failed, matrix dimensions invalid" << std::endl;
+        std::cout << "dot product failed, matrix dimensions invalid: "
+        << lr << "x" << lc << " "
+        << rr << "x" << rc << std::endl;
     }
     return result;
 }
@@ -300,7 +316,9 @@ Matrix Matrix::times(const Matrix &A) const {
             result.setValue(i, getValue(i) + A.getValue(i));
         }
     } else {
-        std::cout << "times failed, inconsistent dimensions" << std::endl;
+        std::cout << "times failed, inconsistent dimensions: "
+                  << rows << "x" << cols << " "
+                  << A.getRows() << "x" << A.getCols() << std::endl;
     }
     return result;
 }
@@ -338,7 +356,7 @@ Matrix Matrix::apply(double (&func)(double)) const {
 
 
 // Converts rows and columns to linear index
-int Matrix::flatten(int row, int col) const {
+int Matrix::rcToIndex(int row, int col) const {
     if (row < rows && col < cols && row >= 0 && col >= 0) {
         return row * cols + col;
     } else {
@@ -384,6 +402,8 @@ void Matrix::save(const std::string& filename) const {
     }
 
     mFile.close();
+
+//    std::cout << "saved matrix to " << filename << std::endl;
 }
 
 void Matrix::load(const std::string& filename) {
@@ -401,7 +421,7 @@ void Matrix::load(const std::string& filename) {
                 setValue(i, j, value);
             }
         }
-        std::cout << "load success" << std::endl;
+//        std::cout << "loaded matrix from " << filename << std::endl;
     } else {
         std::cout << "load fail, file is empty" << std::endl;
     }
@@ -420,10 +440,7 @@ void Matrix::copy(const Matrix &A) {
     }
 }
 
-void Matrix::fill (double value) {
-    for (int i=0; i < size; ++i) {
-        matrixData[i] = value;
-    }
-    std::cout << "fill success" << std::endl;
+Matrix Matrix::flatten() const {
+    return {size, 1, matrixData};
 }
 

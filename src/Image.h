@@ -9,87 +9,70 @@
 #include <sstream>
 #pragma once
 
-class Image: public Matrix {
+class Image {
 public:
     Image();
     Image(int label, int nRows, int nCols, const double* inputData);
 
     [[nodiscard]] int getLabel() const;
-    void setLabel(int newLabel);
+    [[nodiscard]] Matrix getMatrix() const;
 
-    void copy(Image* img);
-    void printImage();
+    [[maybe_unused]] void printImage();
 
 private:
+    Matrix imgMatrix;
     int label;
 };
 
-// CONSTRUCTOR (default)
-Image::Image() : Matrix() {
+Image::Image() {
+    imgMatrix = Matrix();
     this->label = -1;
 }
 
-// CONSTRUCTOR (input + label)
-Image::Image(int label, int nRows, int nCols, const double* inputData) : Matrix(nRows, nCols, inputData) {
+Image::Image(int label, int nRows, int nCols, const double* inputData) {
+    imgMatrix = Matrix(nRows, nCols, inputData);
     this->label = label;
 }
 
-// GETTER (image label)
 int Image::getLabel() const {
     return label;
 }
 
-// SETTER (image label)
-void Image::setLabel(int newLabel) {
-    label = newLabel;
+Matrix Image::getMatrix() const {
+    return imgMatrix;
 }
 
-// Copies data from another image
-void Image::copy(Image* img){
-    label = img->getLabel();
-    rows = img->getRows();
-    cols = img->getCols();
-    elements = rows * cols;
-    matrixData = new double[elements];
-    for (int i=0; i<elements; ++i) {
-        matrixData[i] = img->getElement(i);
-    }
-}
-
-// Prints image and label
-void Image::printImage() {
-    printMatrix();
+[[maybe_unused]] void Image::printImage() {
+    imgMatrix.printMatrix();
     std::cout << "Label: " << label << std::endl;
 }
 
-// Converts data from a CSV file into an array of images
-void csvToImages(Image* images, const std::string &filename, int n) {
+
+std::vector<Image> csvToImages(const std::string& filename, int n) {
+
+    std::vector<Image> images = std::vector<Image>(n);
 
     std::ifstream filein(filename);
 
-    if (filein) {
-        std::string line;
+    std::string line;
+    std::getline(filein, line);
+
+    for (int i = 0; i < n; ++i) {
         std::getline(filein, line);
+        std::istringstream lineStream(line);
+        std::string labelString;
+        std::getline(lineStream, labelString, ',');
+        int label = std::stoi(labelString);
 
-        for (int i = 0; i < n; ++i) {
-            std::getline(filein, line);
-            std::istringstream lineStream(line);
-            std::string labelString;
-            std::getline(lineStream, labelString, ',');
-            int label = std::stoi(labelString);
-
-            double data[28*28];
-            int j = 0;
-            std::string num;
-            while (std::getline(lineStream, num, ',')) {
-                data[j] = std::stod(num) / 256.0;
-                ++j;
-            }
-            Image img(label, 28, 28, data);
-            images[i].copy(&img);
+        double data[28*28];
+        int j = 0;
+        std::string num;
+        while (std::getline(lineStream, num, ',')) {
+            data[j] = std::stod(num) / 256.0;
+            ++j;
         }
-    } else {
-        std::cout << "file not found" << std::endl;
+        Image img(label, 28, 28, data);
+        images[i] = img;
     }
-
+    return images;
 }

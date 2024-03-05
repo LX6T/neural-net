@@ -1,5 +1,4 @@
 #include <iostream>
-#include <algorithm>
 #include "Matrix.h"
 #include "Image.h"
 #include "NeuralNet.h"
@@ -44,24 +43,17 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "Number of training/testing cycles: " << rounds << std::endl;
-    std::cout << "Number of hidden layers: " << hiddenLayers << std::endl;
-    std::cout << "Number of images to train on: " << trainingN << std::endl;
-    std::cout << "Number of images to test on: " << testingN << std::endl;
 
-    double avgScore = 0.0;
     for (int i = 0; i < rounds; ++i) {
+        std::cout << " =========== ROUND " << i + 1 << " =========== " << std::endl;
+        std::cout << "Number of hidden layers: " << hiddenLayers << std::endl;
+        std::cout << "Number of images to train on: " << trainingN << std::endl;
+        std::cout << "Number of images to test on: " << testingN << std::endl;
+
         trainTest(trainingN, hiddenLayers);
         double score = predictTest(testingN, hiddenLayers);
-        std::cout << "Round " << i + 1 << " accuracy: " << score << std::endl << std::endl;
-        avgScore += score;
-        trainingN += 5000;
-        if (trainingN > 60000) {
-            break;
-        }
+        std::cout << "Accuracy: " << score << std::endl << std::endl;
     }
-
-//    avgScore /= rounds;
-//    std::cout << "Average accuracy: " << avgScore << std::endl;
 
     return 0;
 }

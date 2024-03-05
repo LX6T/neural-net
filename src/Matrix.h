@@ -44,14 +44,13 @@ public:
 
     // Matrix arithmetic
     [[nodiscard]] Matrix plus (const Matrix& A) const;
-    [[maybe_unused]] [[nodiscard]] Matrix plus (double a) const;
+    [[nodiscard]] Matrix plus (double a) const;
     [[nodiscard]] Matrix minus (const Matrix& A) const;
-
-    [[maybe_unused]] [[maybe_unused]] [[nodiscard]] Matrix minus (double a) const;
+    [[nodiscard]] Matrix minus (double a) const;
     [[nodiscard]] Matrix dot (const Matrix& A) const;
     [[nodiscard]] Matrix times (const Matrix& A) const;
     [[nodiscard]] Matrix times (double a) const;
-    [[maybe_unused]] [[nodiscard]] Matrix toThePowerOf (int a) const;
+    [[nodiscard]] Matrix toThePowerOf (int a) const;
     [[nodiscard]] Matrix apply (double (&func)(double)) const;
 
     // Transpose
@@ -130,7 +129,6 @@ Matrix::Matrix(int nRows, int nCols, std::vector<double> inputData) {
 }
 
 // CONSTRUCTOR (copy)
-
 Matrix::Matrix(const Matrix& A) {
     rows = A.getRows();
     cols = A.getCols();
@@ -211,7 +209,7 @@ Matrix Matrix::plus(const Matrix &A) const {
 }
 
 // Matrix + scalar
-[[maybe_unused]] Matrix Matrix::plus(double a) const {
+Matrix Matrix::plus(double a) const {
     Matrix result = Matrix(rows, cols);
     for (int i = 0; i < size; ++i) {
         result.setValue(i, getValue(i) + a);
@@ -236,7 +234,7 @@ Matrix Matrix::minus(const Matrix &A) const {
 }
 
 // Matrix - scalar
-[[maybe_unused]] Matrix Matrix::minus(double a) const {
+Matrix Matrix::minus(double a) const {
     Matrix result = Matrix(rows, cols);
     for (int i = 0; i < size; ++i) {
         result.setValue(i, getValue(i) - a);
@@ -304,7 +302,7 @@ Matrix Matrix::times(double a) const {
 
 
 // Matrix ^ integer
-[[maybe_unused]] Matrix Matrix::toThePowerOf(int a) const {
+Matrix Matrix::toThePowerOf(int a) const {
 
     Matrix result = Matrix(*this);
 
@@ -372,8 +370,6 @@ void Matrix::save(const std::string& filename) const {
     }
 
     mFile.close();
-
-//    std::cout << "saved matrix to " << filename << std::endl;
 }
 
 void Matrix::load(const std::string& filename) {
@@ -391,7 +387,6 @@ void Matrix::load(const std::string& filename) {
                 setValue(i, j, value);
             }
         }
-//        std::cout << "loaded matrix from " << filename << std::endl;
     } else {
         std::cout << "load fail, file is empty" << std::endl;
     }

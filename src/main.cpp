@@ -1,38 +1,67 @@
 #include <iostream>
+#include <algorithm>
 #include "Matrix.h"
 #include "Image.h"
 #include "NeuralNet.h"
 
+// SET PATHS TO MNIST DATASETS (CSV FORMAT)
+#define trainingSetPath "C:\\Users\\alex\\JetBrainsProjects\\CLionProjects\\neural-net\\data\\mnist_train.csv"
+#define testingSetPath "C:\\Users\\alex\\JetBrainsProjects\\CLionProjects\\neural-net\\data\\mnist_test.csv"
 
-void trainTest(const std::string& root, const std::string& filename, int n, int L) {
-    std::vector<Image> trainingImages = csvToImages(root + filename, n);
+void trainTest(int n, int L) {
+    std::vector<Image> trainingImages = csvToImages(trainingSetPath, n);
     NeuralNet net = NeuralNet(L, 784, 300, 10);
     net.train(trainingImages, n);
-    net.save(root + "/networks");
+    net.save("./networks");
 }
 
-double predictTest(const std::string& root, const std::string& filename, int n, int L) {
-    std::vector<Image> predictingImages = csvToImages(root + filename, n);
+double predictTest(int n, int L) {
+    std::vector<Image> predictingImages = csvToImages(testingSetPath, n);
     NeuralNet net = NeuralNet(L, 784, 300, 10);
-    net.load(root + "/networks");
+    net.load("./networks");
     double accuracy = net.predictImages(predictingImages, n);
     return accuracy;
 }
 
-int main() {
-    std::string root = "C:/Users/alex/CLionProjects/neural-net";
-    int n = 10;
+int main(int argc, char* argv[]) {
 
-    double avgScore = 0.0;
-    for (int i = 0; i < n; ++i) {
-        trainTest(root, "/data/mnist_test.csv", 10000, 2);
-        double score = predictTest(root, "/data/mnist_train.csv", 702, 2);
-        std::cout << "Score: " << score << std::endl;
-        avgScore += score;
+    if (argc != 5) {
+        std::cout << "The following arguments are required: rounds, hiddenLayers, trainingN, testingN" << std::endl;
+        return 0;
     }
 
-    avgScore /= n;
-    std::cout << "Average score: " << avgScore << std::endl;
+    int rounds = std::stoi(argv[1]);
+    int hiddenLayers = std::stoi(argv[2]);
+    int trainingN = std::stoi(argv[3]);
+    int testingN = std::stoi(argv[4]);
+
+    if (trainingN > 60000) {
+        std::cout << "Maximum number of training images is 60000";
+        return 0;
+    } else if (testingN > 10000) {
+        std::cout << "Maximum number of testing images is 10000";
+        return 0;
+    }
+
+    std::cout << "Number of training/testing cycles: " << rounds << std::endl;
+    std::cout << "Number of hidden layers: " << hiddenLayers << std::endl;
+    std::cout << "Number of images to train on: " << trainingN << std::endl;
+    std::cout << "Number of images to test on: " << testingN << std::endl;
+
+    double avgScore = 0.0;
+    for (int i = 0; i < rounds; ++i) {
+        trainTest(trainingN, hiddenLayers);
+        double score = predictTest(testingN, hiddenLayers);
+        std::cout << "Round " << i + 1 << " accuracy: " << score << std::endl << std::endl;
+        avgScore += score;
+        trainingN += 5000;
+        if (trainingN > 60000) {
+            break;
+        }
+    }
+
+//    avgScore /= rounds;
+//    std::cout << "Average accuracy: " << avgScore << std::endl;
 
     return 0;
 }

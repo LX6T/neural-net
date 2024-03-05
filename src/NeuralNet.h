@@ -9,7 +9,7 @@
 
 class NeuralNet {
 public:
-    NeuralNet(int L, int inputSize, int layerSize, int outputSize);
+    NeuralNet(int hiddenLayers, int inputSize, int layerSize, int outputSize);
 
     void train(std::vector<Image> images, int n);
 
@@ -20,32 +20,35 @@ public:
     void load(const std::string& directory);
 
 private:
-    int L;
+    int hiddenLayers;
     std::vector<Matrix> weightsLayer;
     static double sigmoid(double x);
     static Matrix sigmoidPrime(const Matrix& A);
 };
 
-NeuralNet::NeuralNet(int L, int inputSize, int layerSize, int outputSize) {
+NeuralNet::NeuralNet(int hiddenLayers, int inputSize, int layerSize, int outputSize) {
 
-    this->L = L;
+    this->hiddenLayers = hiddenLayers;
 
     // Initialise weightsLayer randomly
-    weightsLayer = std::vector<Matrix>(L);
+    weightsLayer = std::vector<Matrix>(hiddenLayers + 1);
     weightsLayer[0] = Matrix(layerSize, inputSize, "random");
-    for (int i = 1; i < L - 1; ++i) {
+    for (int i = 1; i < hiddenLayers; ++i) {
         weightsLayer[i] = Matrix(layerSize, layerSize, "random");
     }
-    weightsLayer[L - 1] = Matrix(outputSize, layerSize, "random");
-    // weightsLayer[0]        : 300x784
-    // weightsLayer[i]        : 300x300
-    // weightsLayer[L-1]      : 10x300
+    weightsLayer[hiddenLayers] = Matrix(outputSize, layerSize, "random");
+    // weightsLayer[0]              : 300x784
+    // weightsLayer[i]              : 300x300
+    // weightsLayer[hiddenLayers]   : 10x300
 }
 
 
 void NeuralNet::train(std::vector<Image> images, int n) {
     std::cout << "Training network on " << n << " images..." << std::endl;
     for (int i = 0; i < n; ++i) {
+        if (i % 1000 == 0 && i != 0) {
+            std::cout << "\tTrained on " << i << " images..." << std::endl;
+        }
 
         // Generate ideal output data
         Matrix outputData = Matrix(10, 1, 0.0);
@@ -54,35 +57,35 @@ void NeuralNet::train(std::vector<Image> images, int n) {
 
 
         // Feed input data forward
-        std::vector<Matrix> nodeLayer = std::vector<Matrix>(L + 1);     // L+1 layers
+        std::vector<Matrix> nodeLayer = std::vector<Matrix>(hiddenLayers + 2);     // hiddenLayers+2 layers
         nodeLayer[0] = images[i].getMatrix().flatten();
-        for (int j = 1; j < L + 1; ++j) {
+        for (int j = 1; j < hiddenLayers + 2; ++j) {
             nodeLayer[j] = weightsLayer[j - 1].dot(nodeLayer[j - 1]).apply(sigmoid);
         }
-        Matrix finalOutputs = nodeLayer[L];
+        Matrix finalOutputs = nodeLayer[hiddenLayers + 1];
         // nodeLayer[0]        : 784x1
         // nodeLayer[j]        : 300x1
-        // nodeLayer[L]        : 10x1
+        // nodeLayer[hiddenLayers+1]        : 10x1
 
 
         // Find errors
-        std::vector<Matrix> errors = std::vector<Matrix>(L+1);      // L+1 layers
-        errors[L] = outputData.minus(finalOutputs);
-        for (int j = L - 1; j >= 0; --j) {
+        std::vector<Matrix> errors = std::vector<Matrix>(hiddenLayers + 2);      // hiddenLayers+2 layers
+        errors[hiddenLayers + 1] = outputData.minus(finalOutputs);
+        for (int j = hiddenLayers; j >= 0; --j) {
             errors[j] = weightsLayer[j].transpose().dot(errors[j + 1]);
         }
         // errors[0] : 784x1 (not used)
         // errors[j] : 300x1
-        // errors[L] : 10x1
+        // errors[hiddenLayers] : 10x1
 
 
         // Backpropagation
-        for (int j = L-1; j >= 0; --j) {
+        for (int j = hiddenLayers; j >= 0; --j) {
             weightsLayer[j] = weightsLayer[j].plus(errors[j+1].times(sigmoidPrime(nodeLayer[j+1])).dot(nodeLayer[j].transpose()).times(0.1));
         }
         // weightsLayer[0]        : 300x784
         // weightsLayer[i]        : 300x300
-        // weightsLayer[L-1]      : 10x300
+        // weightsLayer[hiddenLayers]        : 10x300
 
         // Testing
         if (i % 100 == 0) {
@@ -96,15 +99,15 @@ void NeuralNet::train(std::vector<Image> images, int n) {
 int NeuralNet::predict(const Image& img) const {
 
     // Feed input data forward
-    std::vector<Matrix> nodeLayer = std::vector<Matrix>(L + 1);     // L+1 layers
+    std::vector<Matrix> nodeLayer = std::vector<Matrix>(hiddenLayers + 2);     // hiddenLayers+2 layers
     nodeLayer[0] = img.getMatrix().flatten();
-    for (int j = 1; j < L + 1; ++j) {
+    for (int j = 1; j < hiddenLayers + 2; ++j) {
         nodeLayer[j] = weightsLayer[j - 1].dot(nodeLayer[j - 1]).apply(sigmoid);
     }
-    Matrix finalOutputs = nodeLayer[L];
+    Matrix finalOutputs = nodeLayer[hiddenLayers + 1];
     // nodeLayer[0]        : 784x1      (input data)
     // nodeLayer[j]        : 300x1
-    // nodeLayer[L]        : 10x1       (final outputs)
+    // nodeLayer[hiddenLayers+1]      : 10x1       (final outputs)
 
     // Identify network's prediction
     int prediction = -1;
@@ -135,13 +138,13 @@ double NeuralNet::predictImages(std::vector<Image> images, int n) const {
 
 
 void NeuralNet::save(const std::string& directory) const {
-    for (int i = 0; i < L; ++i) {
+    for (int i = 0; i < hiddenLayers + 1; ++i) {
         weightsLayer[i].save(directory + "/weightsLayer" + (char)(i + 48));
     }
 }
 
 void NeuralNet::load(const std::string &directory) {
-    for (int i = 0; i < L; ++i) {
+    for (int i = 0; i < hiddenLayers + 1; ++i) {
         weightsLayer[i].load(directory + "/weightsLayer" + (char)(i + 48));
     }
 }

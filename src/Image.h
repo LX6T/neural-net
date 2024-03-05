@@ -17,7 +17,7 @@ public:
     [[nodiscard]] int getLabel() const;
     [[nodiscard]] Matrix getMatrix() const;
 
-    [[maybe_unused]] void printImage();
+    void printImage();
 
 private:
     Matrix imgMatrix;
@@ -42,7 +42,7 @@ Matrix Image::getMatrix() const {
     return imgMatrix;
 }
 
-[[maybe_unused]] void Image::printImage() {
+void Image::printImage() {
     imgMatrix.printMatrix();
     std::cout << "Label: " << label << std::endl;
 }
